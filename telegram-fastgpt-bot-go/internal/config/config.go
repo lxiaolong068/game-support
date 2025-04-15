@@ -1,6 +1,9 @@
 package config
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -37,7 +40,7 @@ func LoadConfig() error {
 	// 加载 Telegram 相关配置
 	AppConfig.TelegramBotToken = os.Getenv("TELEGRAM_BOT_TOKEN")
 	if AppConfig.TelegramBotToken == "" {
-		return nil
+		return fmt.Errorf("TELEGRAM_BOT_TOKEN 不能为空")
 	}
 
 	// 加载 FastGPT 相关配置
@@ -60,7 +63,9 @@ func LoadConfig() error {
 	}
 
 	AppConfig.WebhookURL = os.Getenv("WEBHOOK_URL")
-	AppConfig.WebhookPath = "/webhook/" + AppConfig.TelegramBotToken
+	// 使用 Token 的 SHA256 哈希作为 WebhookPath，避免直接暴露 Token
+	hash := sha256.Sum256([]byte(AppConfig.TelegramBotToken))
+	AppConfig.WebhookPath = "/webhook/" + hex.EncodeToString(hash[:8]) // 取前8字节，足够唯一且不易反推
 
 	return nil
 }

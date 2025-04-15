@@ -93,12 +93,19 @@ func HandleUpdate(update tgbotapi.Update) {
 	// 编辑之前的消息
 	_, err = Bot.Send(editMsg)
 	if err != nil {
-		log.Printf("编辑消息失败: %v", err)
+		log.Printf("编辑消息失败: %v，尝试发送新消息", err)
+		// 编辑失败时，直接发送新消息，确保用户能收到回复
+		fallbackMsg := tgbotapi.NewMessage(chatID, editMsg.Text)
+		_, sendErr := Bot.Send(fallbackMsg)
+		if sendErr != nil {
+			log.Printf("补发新消息也失败: %v", sendErr)
+		}
 	}
 }
 
 // 处理Webhook更新
-
+// 支持高并发：每个 update 启动一个 goroutine 处理消息。
+// go-telegram-bot-api v5 的 BotAPI.Send 方法是并发安全的。
 func ProcessWebhookUpdate(updateBytes []byte) {
 	var update tgbotapi.Update
 	err := json.Unmarshal(updateBytes, &update)
@@ -106,5 +113,6 @@ func ProcessWebhookUpdate(updateBytes []byte) {
 		log.Printf("解析更新失败: %v", err)
 		return
 	}
-	HandleUpdate(update)
+	// 并发处理每个 update，提升高并发下的响应能力
+	go HandleUpdate(update)
 }

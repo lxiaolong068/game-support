@@ -37,6 +37,11 @@ type ChatResponse struct {
 	Choices []Choice `json:"choices"`
 }
 
+// 创建可复用的 HTTP 客户端
+var httpClient = &http.Client{
+	Timeout: 30 * time.Second,
+}
+
 // QueryKnowledgeBase 调用FastGPT知识库API
 // query: 用户的问题
 // chatID: 用户ID (用于FastGPT的会话管理)
@@ -85,13 +90,8 @@ func QueryKnowledgeBase(query string, chatID string) (string, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", cfg.FastGPTAPIKey))
 
-	// 创建HTTP客户端并设置超时
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	// 发送请求
-	resp, err := client.Do(req)
+	// 发送请求（使用全局 httpClient）
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.Printf("HTTP请求错误: %v", err)
 		return "抱歉，查询知识库时遇到网络问题。", err
