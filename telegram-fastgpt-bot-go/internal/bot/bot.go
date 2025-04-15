@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -97,7 +98,6 @@ func HandleUpdate(update tgbotapi.Update) {
 }
 
 // 处理Webhook更新
-import "encoding/json"
 
 func ProcessWebhookUpdate(updateBytes []byte) {
 	var update tgbotapi.Update
