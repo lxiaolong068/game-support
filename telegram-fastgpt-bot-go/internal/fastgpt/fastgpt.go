@@ -104,14 +104,41 @@ func QueryKnowledgeBase(query string, chatID string) (string, error) {
 	}
 
 	// 解析 searchTest 响应结构
+	type ScoreItem struct {
+		Type  string  `json:"type"`
+		Value float64 `json:"value"`
+	}
+
+	type SearchResultItem struct {
+		ID         string      `json:"id"`
+		UpdateTime string      `json:"updateTime"`
+		Q          string      `json:"q"`
+		A          string      `json:"a"`
+		ChunkIndex int         `json:"chunkIndex"`
+		DatasetID  string      `json:"datasetId"`
+		CollectionID string    `json:"collectionId"`
+		SourceID   string      `json:"sourceId"`
+		SourceName string      `json:"sourceName"`
+		Score      []ScoreItem `json:"score"` // Score 是一个对象数组
+		Tokens     int         `json:"tokens"`
+	}
+
+	type DataPayload struct {
+		List                []SearchResultItem `json:"list"`
+		Duration            string             `json:"duration"`
+		QueryExtensionModel string             `json:"queryExtensionModel"`
+		SearchMode          string             `json:"searchMode"`
+		Limit               int                `json:"limit"`
+		Similarity          float64            `json:"similarity"` // 注意：JSON 中是 0，可能是 int 或 float
+		UsingReRank         bool               `json:"usingReRank"`
+		UsingSimilarityFilter bool             `json:"usingSimilarityFilter"`
+	}
+
 	type SearchTestResp struct {
-		Code int `json:"code"`
-		StatusText string `json:"statusText"`
-		Data []struct {
-			Q string `json:"q"`
-			A string `json:"a"`
-			Score float64 `json:"score"`
-		} `json:"data"`
+		Code       int         `json:"code"`
+		StatusText string      `json:"statusText"`
+		Message    string      `json:"message"` // 添加 message 字段
+		Data       DataPayload `json:"data"`    // Data 是一个对象，包含 List
 	}
 
 	var result SearchTestResp
@@ -120,12 +147,13 @@ func QueryKnowledgeBase(query string, chatID string) (string, error) {
 		return "抱歉，解析知识库答案时出错。", err
 	}
 
-	if len(result.Data) == 0 {
-		log.Printf("知识库未返回有效答案, 响应: %s", string(respBody))
+	// 检查 Data.List 是否为空
+	if len(result.Data.List) == 0 {
+		log.Printf("知识库未返回有效答案 (list is empty), 响应: %s", string(respBody))
 		return "抱歉，未能从知识库中检索到相关答案。", nil
 	}
 
 	// 返回最相关的答案
-	answer := result.Data[0].A
+	answer := result.Data.List[0].A
 	return answer, nil
 }
