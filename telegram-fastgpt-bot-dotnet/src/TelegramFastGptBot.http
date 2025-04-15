@@ -1,0 +1,6 @@
+@TelegramFastGptBot_HostAddress = http://localhost:5013
+
+GET {{TelegramFastGptBot_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "Id9meCd7az3dzuQgpR5EahWol4/endR8nQQkOOZnnOU=",
+  "Source": "TelegramFastGptBot",
+  "BasePath": "_content/TelegramFastGptBot",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="../buildMultiTargeting/TelegramFastGptBot.props" />
+</Project>

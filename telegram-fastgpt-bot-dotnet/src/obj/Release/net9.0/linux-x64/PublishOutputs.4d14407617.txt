@@ -1,0 +1,4 @@
+/Users/brucelee/Documents/GitHub/game-support/telegram-fastgpt-bot-dotnet/src/publish/appsettings.Development.json
+/Users/brucelee/Documents/GitHub/game-support/telegram-fastgpt-bot-dotnet/src/publish/appsettings.json
+/Users/brucelee/Documents/GitHub/game-support/telegram-fastgpt-bot-dotnet/src/publish/TelegramFastGptBot.pdb
+/Users/brucelee/Documents/GitHub/game-support/telegram-fastgpt-bot-dotnet/src/publish/TelegramFastGptBot
