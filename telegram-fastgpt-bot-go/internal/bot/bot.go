@@ -97,12 +97,14 @@ func HandleUpdate(update tgbotapi.Update) {
 }
 
 // 处理Webhook更新
+import "encoding/json"
+
 func ProcessWebhookUpdate(updateBytes []byte) {
-	update, err := tgbotapi.NewUpdateFromJSON(updateBytes)
+	var update tgbotapi.Update
+	err := json.Unmarshal(updateBytes, &update)
 	if err != nil {
 		log.Printf("解析更新失败: %v", err)
 		return
 	}
-	
 	HandleUpdate(update)
 }
