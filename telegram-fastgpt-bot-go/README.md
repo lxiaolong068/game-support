@@ -30,6 +30,26 @@ telegram-fastgpt-bot-go/
 │   │   └── bot.go       # Telegram 机器人逻辑
 │   ├── config/
 │   │   └── config.go    # 配置加载和管理
+```
+
+## 编译说明
+
+本项目为原生 Go 代码，无需额外依赖，支持跨平台编译。推荐使用 Go 1.18 及以上版本。
+
+- 编译 Linux/macOS 二进制：
+  ```bash
+  go build -o bot cmd/main.go
+  ```
+- 编译 Windows 可执行文件：
+  ```bash
+  go build -o bot.exe cmd/main.go
+  ```
+- 交叉编译示例（如在 macOS 下编译 Linux 版）：
+  ```bash
+  GOOS=linux GOARCH=amd64 go build -o telegram-fastgpt-bot-go cmd/main.go
+  ```
+
+编译成功后，直接运行生成的二进制文件即可。
 │   └── fastgpt/
 │       └── fastgpt.go   # FastGPT API 调用逻辑
 ├── .env                 # 环境变量文件（需手动配置）
@@ -184,7 +204,7 @@ A: Go 语言相比 Node.js 具有以下优势：
 
 ## 进阶开发建议
 
-- 增加日志记录到文件功能
+- 日志系统升级为结构化日志（zap），并优化错误处理，便于后期排查和监控
 - 实现会话管理和上下文记忆
 - 增加多语言支持
 - 增加用户权限控制

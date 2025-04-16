@@ -3,12 +3,12 @@ package bot
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/yourusername/telegram-fastgpt-bot-go/internal/config"
-	"github.com/yourusername/telegram-fastgpt-bot-go/internal/fastgpt"
+	"github.com/lxiaolong068/game-support/telegram-fastgpt-bot-go/internal/config"
+	"github.com/lxiaolong068/game-support/telegram-fastgpt-bot-go/internal/fastgpt"
+	"go.uber.org/zap"
 )
 
 var Bot *tgbotapi.BotAPI
@@ -20,12 +20,13 @@ func InitBot() error {
 	// 创建机器人实例
 	Bot, err = tgbotapi.NewBotAPI(config.AppConfig.TelegramBotToken)
 	if err != nil {
+		config.Logger.Error("创建Telegram机器人失败", zap.Error(err))
 		return fmt.Errorf("创建Telegram机器人失败: %w", err)
 	}
 
 	// 设置调试模式
 	Bot.Debug = false
-	log.Printf("已授权账号 %s", Bot.Self.UserName)
+	config.Logger.Info("已授权账号", zap.String("username", Bot.Self.UserName))
 	
 	return nil
 }
@@ -37,16 +38,18 @@ func SetupWebhook() error {
 	// 配置Webhook
 	webhook, err := tgbotapi.NewWebhook(webhookURL)
 	if err != nil {
+		config.Logger.Error("创建Webhook配置失败", zap.Error(err))
 		return fmt.Errorf("创建Webhook配置失败: %w", err)
 	}
 	
 	// 设置Webhook
 	_, err = Bot.Request(webhook)
 	if err != nil {
+		config.Logger.Error("设置Webhook失败", zap.Error(err))
 		return fmt.Errorf("设置Webhook失败: %w", err)
 	}
 	
-	log.Printf("Webhook已设置为: %s", webhookURL)
+	config.Logger.Info("Webhook已设置", zap.String("webhook_url", webhookURL))
 	return nil
 }
 
@@ -66,13 +69,13 @@ func HandleUpdate(update tgbotapi.Update) {
 		return
 	}
 
-	log.Printf("收到来自 %d 的消息: %s", chatID, text)
+	config.Logger.Info("收到消息", zap.Int64("chat_id", chatID), zap.String("text", text))
 
 	// 发送"正在思考..."消息
 	thinkingMsg := tgbotapi.NewMessage(chatID, "🤔 正在思考中，请稍候...")
 	sentMsg, err := Bot.Send(thinkingMsg)
 	if err != nil {
-		log.Printf("发送思考消息失败: %v", err)
+		config.Logger.Error("发送思考消息失败", zap.Error(err))
 		return
 	}
 	
@@ -83,22 +86,22 @@ func HandleUpdate(update tgbotapi.Update) {
 	var editMsg tgbotapi.EditMessageTextConfig
 	
 	if err != nil {
-		log.Printf("处理消息 %d 时出错: %v", chatID, err)
+		config.Logger.Error("处理消息时出错", zap.Int64("chat_id", chatID), zap.Error(err))
 		editMsg = tgbotapi.NewEditMessageText(chatID, sentMsg.MessageID, "😥 抱歉，处理您的问题时发生了错误。")
 	} else {
 		editMsg = tgbotapi.NewEditMessageText(chatID, sentMsg.MessageID, answer)
-		log.Printf("已发送回答给 %d: %s", chatID, answer)
+		config.Logger.Info("已发送回答", zap.Int64("chat_id", chatID), zap.String("answer", answer))
 	}
 	
 	// 编辑之前的消息
 	_, err = Bot.Send(editMsg)
 	if err != nil {
-		log.Printf("编辑消息失败: %v，尝试发送新消息", err)
+		config.Logger.Warn("编辑消息失败，尝试发送新消息", zap.Error(err))
 		// 编辑失败时，直接发送新消息，确保用户能收到回复
 		fallbackMsg := tgbotapi.NewMessage(chatID, editMsg.Text)
 		_, sendErr := Bot.Send(fallbackMsg)
 		if sendErr != nil {
-			log.Printf("补发新消息也失败: %v", sendErr)
+			config.Logger.Error("补发新消息也失败", zap.Error(sendErr))
 		}
 	}
 }
@@ -110,7 +113,7 @@ func ProcessWebhookUpdate(updateBytes []byte) {
 	var update tgbotapi.Update
 	err := json.Unmarshal(updateBytes, &update)
 	if err != nil {
-		log.Printf("解析更新失败: %v", err)
+		config.Logger.Error("解析更新失败", zap.Error(err))
 		return
 	}
 	// 并发处理每个 update，提升高并发下的响应能力

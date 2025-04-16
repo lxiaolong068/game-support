@@ -2,31 +2,37 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/yourusername/telegram-fastgpt-bot-go/internal/bot"
-	"github.com/yourusername/telegram-fastgpt-bot-go/internal/config"
+	"github.com/lxiaolong068/game-support/telegram-fastgpt-bot-go/internal/bot"
+	"github.com/lxiaolong068/game-support/telegram-fastgpt-bot-go/internal/config"
+	"go.uber.org/zap"
 )
 
 func main() {
+	// 初始化日志器
+	if err := config.InitLogger(); err != nil {
+		panic(fmt.Sprintf("初始化日志器失败: %v", err))
+	}
+	defer config.Logger.Sync()
+
 	// 加载配置
 	if err := config.LoadConfig(); err != nil {
-		log.Fatalf("加载配置失败: %v", err)
+		config.Logger.Fatal("加载配置失败", zap.Error(err))
 	}
 
 	// 验证配置
 	missingConfigs := config.AppConfig.Validate()
 	if len(missingConfigs) > 0 {
-		log.Fatalf("缺少必要的配置: %v", missingConfigs)
+		config.Logger.Fatal("缺少必要的配置", zap.Any("missing_configs", missingConfigs))
 	}
 
 	// 初始化Telegram机器人
 	if err := bot.InitBot(); err != nil {
-		log.Fatalf("初始化Telegram机器人失败: %v", err)
+		config.Logger.Fatal("初始化Telegram机器人失败", zap.Error(err))
 	}
 
 	// 创建Fiber应用
@@ -61,16 +67,16 @@ func main() {
 
 	// 设置Webhook
 	if err := bot.SetupWebhook(); err != nil {
-		log.Fatalf("设置Webhook失败: %v", err)
+		config.Logger.Fatal("设置Webhook失败", zap.Error(err))
 	}
 
 	// 获取端口
 	port := config.AppConfig.Port
 
 	// 启动服务器
-	log.Printf("服务器开始监听 :%d", port)
+	config.Logger.Info("服务器开始监听", zap.Int("port", port))
 	if err := app.Listen(fmt.Sprintf(":%d", port)); err != nil {
-		log.Printf("启动服务器失败: %v", err)
+		config.Logger.Error("启动服务器失败", zap.Error(err))
 		os.Exit(1)
 	}
 }
