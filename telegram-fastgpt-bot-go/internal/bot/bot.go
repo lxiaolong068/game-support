@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
+	"golang.org/x/time/rate"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/lxiaolong068/game-support/telegram-fastgpt-bot-go/internal/config"
@@ -53,6 +56,15 @@ func SetupWebhook() error {
 	return nil
 }
 
+// 令牌桶限流配置
+const (
+	rateLimitCount    = 5            // 每分钟最大请求数
+	rateLimitInterval = time.Minute // 时间窗口
+)
+
+// limiterMap 存储每个用户的令牌桶
+var limiterMap sync.Map // map[int64]*rate.Limiter
+
 // 处理Telegram消息
 func HandleUpdate(update tgbotapi.Update) {
 	// 只处理接收到的消息
@@ -66,6 +78,17 @@ func HandleUpdate(update tgbotapi.Update) {
 
 	// 忽略命令或空消息
 	if text == "" || strings.HasPrefix(text, "/") {
+		return
+	}
+
+	// 令牌桶限流
+	limVal, _ := limiterMap.LoadOrStore(chatID,
+		rate.NewLimiter(rate.Every(rateLimitInterval/time.Duration(rateLimitCount)), rateLimitCount))
+	limiter := limVal.(*rate.Limiter)
+	if !limiter.Allow() {
+		warnMsg := tgbotapi.NewMessage(chatID, "⚠️ 操作过于频繁，请稍后再试。")
+		_, _ = Bot.Send(warnMsg)
+		config.Logger.Warn("用户请求过于频繁(令牌桶)", zap.Int64("chat_id", chatID))
 		return
 	}
 
