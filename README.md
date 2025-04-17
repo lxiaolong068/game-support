@@ -20,6 +20,40 @@
 - Fiber (高性能 Web 框架)
 - godotenv (环境变量管理)
 
+## 接口说明
+
+本项目主要涉及以下两个外部接口交互：
+
+### 1. Telegram Webhook 接收接口
+
+当用户向 Telegram Bot 发送消息时，Telegram 服务器会向本项目配置的 Webhook URL 发送 POST 请求。
+
+- **URL:** 由 `.env` 文件中的 `WEBHOOK_URL` 变量定义。
+- **端口:** 由 `.env` 文件中的 `PORT` 变量定义（默认为 3000）。
+- **HTTP 方法:** `POST`
+- **请求体 (Payload):** Telegram 服务器发送的 `Update` 对象 (JSON 格式)，包含了用户消息等信息。具体结构请参考 [Telegram Bot API 文档](https://core.telegram.org/bots/api#update)。
+- **处理逻辑:** 应用程序接收到 `Update` 后，提取用户消息，并调用 FastGPT API 获取回复。
+
+### 2. FastGPT 知识库查询接口
+
+本项目调用 FastGPT 提供的 API 来查询知识库并获取智能回复。
+
+- **URL:** 由 `.env` 文件中的 `FASTGPT_API_ENDPOINT` 变量定义。
+- **HTTP 方法:** `POST` (通常用于查询)
+- **请求头 (Headers):**
+    - `Authorization: Bearer <FASTGPT_API_KEY>` (使用 `.env` 文件中的 `FASTGPT_API_KEY`)
+    - `Content-Type: application/json`
+- **请求体 (Payload):** JSON 格式，包含需要查询的问题等信息。通常结构如下（具体请参考您使用的 FastGPT 版本文档）：
+  ```json
+  {
+    "kbId": "你的_FastGPT_知识库ID", // 从 .env 读取 FASTGPT_KB_ID
+    "prompt": "用户发送的问题文本",
+    // 可能包含其他参数，如 stream, detail 等
+  }
+  ```
+- **响应体 (Response):** FastGPT 返回的包含答案的 JSON 数据。
+- **处理逻辑:** 将从 FastGPT 获取到的答案格式化后，通过 Telegram Bot API 回复给用户。
+
 ## 目录结构
 
 ```
